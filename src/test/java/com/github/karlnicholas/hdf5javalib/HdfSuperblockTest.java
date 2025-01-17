@@ -3,16 +3,15 @@ package com.github.karlnicholas.hdf5javalib;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class Hdf5SuperblockTest {
+class HdfSuperblockTest {
 
     @Test
     void testReadAndWrite() {
         // Create a superblock with sample values
-        Hdf5Superblock superblock = new Hdf5Superblock(1, 1024L, 2048L, 4096L, 8192L);
+        HdfSuperblock superblock = new HdfSuperblock(1, 1024L, 2048L, 4096L, 8192L);
 
         // Write the superblock to a ByteBuffer
         ByteBuffer buffer = ByteBuffer.allocate(48);
@@ -29,7 +28,7 @@ class Hdf5SuperblockTest {
 
         // Reset buffer position to read the superblock
         buffer.position(0);
-        Hdf5Superblock readSuperblock = Hdf5Superblock.readFromBuffer(buffer);
+        HdfSuperblock readSuperblock = HdfSuperblock.readFromBuffer(buffer);
 
         // Verify that the fields match
         assertEquals(superblock.getVersion(), readSuperblock.getVersion(), "Version mismatch");
@@ -48,7 +47,7 @@ class Hdf5SuperblockTest {
 
         // Expect an exception due to invalid signature
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
-                Hdf5Superblock.readFromBuffer(buffer));
+                HdfSuperblock.readFromBuffer(buffer));
 
         assertEquals("Invalid file signature", exception.getMessage(), "Expected exception for invalid file signature");
     }
@@ -60,7 +59,7 @@ class Hdf5SuperblockTest {
 
         // Expect an exception due to insufficient size
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
-                Hdf5Superblock.readFromBuffer(smallBuffer));
+                HdfSuperblock.readFromBuffer(smallBuffer));
 
         assertEquals("Invalid file signature", exception.getMessage(), "Expected exception for invalid signature with insufficient size");
     }

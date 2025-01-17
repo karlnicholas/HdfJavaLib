@@ -47,7 +47,21 @@ public class HdfFixedPoint {
         return result;
     }
 
+    public boolean isUndefined() {
+        if (bytes == null || bytes.length == 0) {
+            return false; // Consider an empty or null array as not all 0xFF
+        }
+        for (byte b : bytes) {
+            if ((b & 0xFF) != 0xFF) { // Check each byte
+                return false;
+            }
+        }
+        return true;
+    }
     public String getHdfType() {
+        if (isUndefined()) {
+            throw new IllegalStateException("FixedPoint undefined");
+        }
         if (signed) {
             switch (size) {
                 case 8: return "HDF5_SIGNED_BYTE";
@@ -89,6 +103,9 @@ public class HdfFixedPoint {
     }
 
     public BigInteger getBigIntegerValue() {
+        if (isUndefined()) {
+            throw new IllegalStateException("FixedPoint undefined");
+        }
         byte[] effectiveBytes = littleEndian ? reverseBytes(bytes) : bytes;
 
         if (signed) {
@@ -115,6 +132,9 @@ public class HdfFixedPoint {
 
     @Override
     public String toString() {
+        if (isUndefined()) {
+            return "FixedPoint undefined";
+        }
         return "HdfFixedPoint{" +
                 "value=" + getBigIntegerValue() +
                 ", size=" + size +
