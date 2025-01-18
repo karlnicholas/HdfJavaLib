@@ -26,12 +26,17 @@ public class HdfSymbolTableEntry {
     }
 
     public static HdfSymbolTableEntry fromByteBuffer(ByteBuffer buffer, int offsetSize) {
+        // Read the fixed-point values
         HdfFixedPoint linkNameOffset = new HdfFixedPoint(buffer, offsetSize * 8, false);
         HdfFixedPoint objectHeaderAddress = new HdfFixedPoint(buffer, offsetSize * 8, false);
 
-        int cacheType = Byte.toUnsignedInt(buffer.get());
-        buffer.get(); // Reserved byte
+        // Read the 4-byte cache type
+        int cacheType = buffer.getInt();
 
+        // Skip the 4-byte reserved field
+        buffer.getInt();
+
+        // Initialize addresses for cacheType 1
         HdfFixedPoint bTreeAddress = null;
         HdfFixedPoint localHeapAddress = null;
 
@@ -43,6 +48,40 @@ public class HdfSymbolTableEntry {
         }
 
         return new HdfSymbolTableEntry(linkNameOffset, objectHeaderAddress, cacheType, bTreeAddress, localHeapAddress);
+    }
+
+    public void writeToBuffer(ByteBuffer buffer, int offsetSize) {
+        buffer.put(linkNameOffset.getHdfBytes(true));
+        buffer.put(objectHeaderAddress.getHdfBytes(true));
+        buffer.put((byte) cacheType);
+        buffer.put((byte) 0); // Reserved byte
+
+        if (cacheType == 1) {
+            buffer.put(bTreeAddress != null ? bTreeAddress.getHdfBytes(true) : HdfFixedPoint.undefined(offsetSize * 8).getHdfBytes(true));
+            buffer.put(localHeapAddress != null ? localHeapAddress.getHdfBytes(true) : HdfFixedPoint.undefined(offsetSize * 8).getHdfBytes(true));
+        } else {
+            buffer.put(new byte[16]); // Write placeholder bytes for scratch-pad
+        }
+    }
+
+    public HdfFixedPoint getLinkNameOffset() {
+        return linkNameOffset;
+    }
+
+    public HdfFixedPoint getObjectHeaderAddress() {
+        return objectHeaderAddress;
+    }
+
+    public int getCacheType() {
+        return cacheType;
+    }
+
+    public HdfFixedPoint getBTreeAddress() {
+        return bTreeAddress;
+    }
+
+    public HdfFixedPoint getLocalHeapAddress() {
+        return localHeapAddress;
     }
 
     @Override

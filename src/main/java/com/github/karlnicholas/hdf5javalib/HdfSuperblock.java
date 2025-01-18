@@ -111,9 +111,9 @@ public class HdfSuperblock {
         buffer.putInt(0); // Consistency flags
 
         buffer.put(baseAddress.getHdfBytes(true));
-        buffer.put(freeSpaceAddress.getHdfBytes(true));
+        buffer.put(freeSpaceAddress != null ? freeSpaceAddress.getHdfBytes(true) : HdfFixedPoint.undefined(sizeOfOffsets).getHdfBytes(true));
         buffer.put(endOfFileAddress.getHdfBytes(true));
-        buffer.put(driverInformationAddress.getHdfBytes(true));
+        buffer.put(driverInformationAddress != null ? driverInformationAddress.getHdfBytes(true) : HdfFixedPoint.undefined(sizeOfOffsets).getHdfBytes(true));
     }
 
     public int getVersion() {
@@ -155,10 +155,11 @@ public class HdfSuperblock {
                 ", sizeOfLengths=" + sizeOfLengths +
                 ", groupLeafNodeK=" + groupLeafNodeK +
                 ", groupInternalNodeK=" + groupInternalNodeK +
-                ", baseAddress=" + baseAddress +
+                ", baseAddress=" + baseAddress + // Uses HdfFixedPoint.toString()
                 ", freeSpaceAddress=" + freeSpaceAddress +
                 ", endOfFileAddress=" + endOfFileAddress +
                 ", driverInformationAddress=" + driverInformationAddress +
                 '}';
     }
+
 }
