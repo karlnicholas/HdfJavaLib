@@ -3,6 +3,7 @@ package com.github.karlnicholas.hdf5javalib.util;
 import com.github.karlnicholas.hdf5javalib.numeric.HdfFixedPoint;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 
 public class HdfFixedPointFactory {
 
@@ -17,7 +18,7 @@ public class HdfFixedPointFactory {
         SIGNED_LONG(64, true),
         UNSIGNED_LONG(64, false);
 
-        private final int size;     // Bit size
+        private final int size; // Bit size
         private final boolean signed;
 
         HdfType(int size, boolean signed) {
@@ -37,8 +38,8 @@ public class HdfFixedPointFactory {
     /**
      * Constructs an HdfFixedPoint instance based on the specified HdfType and numeric value.
      *
-     * @param type  The HDF type (e.g., SIGNED_INT, UNSIGNED_SHORT).
-     * @param value The numeric value to store.
+     * @param type         The HDF type (e.g., SIGNED_INT, UNSIGNED_SHORT).
+     * @param value        The numeric value to store.
      * @param littleEndian Whether to use little-endian byte ordering.
      * @return A new HdfFixedPoint instance.
      */
@@ -48,10 +49,28 @@ public class HdfFixedPointFactory {
         // Validate the value against the type's signedness and size
         validateValueFitsType(type, bigValue);
 
-        // Convert BigInteger to byte array of appropriate size
-        byte[] bytes = toSizedByteArray(bigValue, type.getSize() / 8, littleEndian);
+        // Use the BigInteger constructor to create the HdfFixedPoint
+        return new HdfFixedPoint(bigValue, littleEndian);
+    }
 
-        return new HdfFixedPoint(bytes, type.getSize(), type.isSigned(), littleEndian);
+    /**
+     * Constructs an HdfFixedPoint instance directly from raw bytes.
+     *
+     * @param type         The HDF type (e.g., SIGNED_INT, UNSIGNED_SHORT).
+     * @param bytes        The byte array representing the value.
+     * @param littleEndian Whether the byte array is in little-endian format.
+     * @return A new HdfFixedPoint instance.
+     */
+    public static HdfFixedPoint createFixedPointFromBytes(HdfType type, byte[] bytes, boolean littleEndian) {
+        if (bytes.length != type.getSize() / 8) {
+            throw new IllegalArgumentException("Byte array length does not match the expected size for " + type);
+        }
+
+        // Use ByteBuffer constructor to create the HdfFixedPoint
+        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        buffer.order(littleEndian ? java.nio.ByteOrder.LITTLE_ENDIAN : java.nio.ByteOrder.BIG_ENDIAN);
+
+        return new HdfFixedPoint(buffer, type.getSize(), type.isSigned());
     }
 
     // Helper: Convert a numeric value to BigInteger
@@ -80,30 +99,5 @@ public class HdfFixedPointFactory {
                 throw new IllegalArgumentException("Value " + value + " exceeds range for " + type);
             }
         }
-    }
-
-    // Helper: Convert BigInteger to a byte array of the specified size, applying little-endian if needed
-    private static byte[] toSizedByteArray(BigInteger value, int byteSize, boolean littleEndian) {
-        byte[] fullBytes = value.toByteArray();
-        byte[] result = new byte[byteSize];
-
-        // Copy the least significant bytes
-        int copyLength = Math.min(fullBytes.length, byteSize);
-        System.arraycopy(fullBytes, fullBytes.length - copyLength, result, byteSize - copyLength, copyLength);
-
-        // Reverse for little-endian if needed
-        if (littleEndian) {
-            return reverseBytes(result);
-        }
-        return result;
-    }
-
-    // Helper: Reverse byte array for little-endian storage
-    private static byte[] reverseBytes(byte[] input) {
-        byte[] reversed = new byte[input.length];
-        for (int i = 0; i < input.length; i++) {
-            reversed[i] = input[input.length - i - 1];
-        }
-        return reversed;
     }
 }

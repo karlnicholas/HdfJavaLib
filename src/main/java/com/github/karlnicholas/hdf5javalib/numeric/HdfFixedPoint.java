@@ -1,6 +1,7 @@
 package com.github.karlnicholas.hdf5javalib.numeric;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class HdfFixedPoint {
@@ -32,6 +33,46 @@ public class HdfFixedPoint {
         this.bytes = toSizedByteArray(value, this.size / 8, littleEndian);
     }
 
+    // Constructor for ByteBuffer
+    public HdfFixedPoint(ByteBuffer buffer, int size, boolean signed) {
+        this.size = size;
+        this.signed = signed;
+        this.littleEndian = true; // Default to little-endian for HDF5
+
+        if (size <= 0 || size % 8 != 0) {
+            throw new IllegalArgumentException("Size must be a positive multiple of 8");
+        }
+
+        this.bytes = new byte[size / 8];
+        buffer.get(this.bytes);
+
+        // Adjust byte order if needed
+        if (!buffer.order().equals(java.nio.ByteOrder.LITTLE_ENDIAN)) {
+            reverseBytesInPlace(this.bytes);
+        }
+    }
+
+    // Constructor for ByteBuffer with explicit endianness
+    public HdfFixedPoint(ByteBuffer buffer, int size, boolean signed, boolean littleEndian) {
+        this.size = size;
+        this.signed = signed;
+        this.littleEndian = littleEndian;
+
+        if (size <= 0 || size % 8 != 0) {
+            throw new IllegalArgumentException("Size must be a positive multiple of 8");
+        }
+
+        this.bytes = new byte[size / 8];
+        buffer.get(this.bytes);
+
+        // Adjust byte order if specified endianness doesn't match buffer's order
+        if (littleEndian && !buffer.order().equals(java.nio.ByteOrder.LITTLE_ENDIAN)) {
+            reverseBytesInPlace(this.bytes);
+        } else if (!littleEndian && buffer.order().equals(java.nio.ByteOrder.LITTLE_ENDIAN)) {
+            reverseBytesInPlace(this.bytes);
+        }
+    }
+
     private byte[] toSizedByteArray(BigInteger value, int byteSize, boolean littleEndian) {
         byte[] fullBytes = value.toByteArray();
         byte[] result = new byte[byteSize];
@@ -42,22 +83,20 @@ public class HdfFixedPoint {
 
         // Reverse for little-endian if needed
         if (littleEndian) {
-            return reverseBytes(result);
+            reverseBytesInPlace(result);
         }
         return result;
     }
 
     public boolean isUndefined() {
-        if (bytes == null || bytes.length == 0) {
-            return false; // Consider an empty or null array as not all 0xFF
-        }
         for (byte b : bytes) {
-            if ((b & 0xFF) != 0xFF) { // Check each byte
+            if ((b & 0xFF) != 0xFF) {
                 return false;
             }
         }
         return true;
     }
+
     public String getHdfType() {
         if (isUndefined()) {
             throw new IllegalStateException("FixedPoint undefined");
@@ -78,28 +117,6 @@ public class HdfFixedPoint {
             }
         }
         throw new IllegalStateException("Unsupported type");
-    }
-
-    public HdfFixedPoint(byte[] bytes, int size, boolean signed) {
-        this(bytes, size, signed, true); // Defaults to little-endian
-    }
-
-    public HdfFixedPoint(byte[] bytes, int size, boolean signed, boolean littleEndian) {
-        if (bytes == null) {
-            throw new IllegalArgumentException("Byte array cannot be null");
-        }
-        if (size <= 0 || size % 8 != 0) {
-            throw new IllegalArgumentException("Size must be a positive multiple of 8");
-        }
-        if (bytes.length != size / 8) {
-            throw new IllegalArgumentException(
-                    "Byte array size does not match specified size. Expected: " + (size / 8) + ", Found: " + bytes.length
-            );
-        }
-        this.bytes = Arrays.copyOf(bytes, bytes.length); // Defensive copy
-        this.size = size;
-        this.signed = signed;
-        this.littleEndian = littleEndian;
     }
 
     public BigInteger getBigIntegerValue() {
@@ -123,24 +140,36 @@ public class HdfFixedPoint {
     }
 
     private byte[] reverseBytes(byte[] input) {
-        byte[] reversed = new byte[input.length];
-        for (int i = 0; i < input.length; i++) {
-            reversed[i] = input[input.length - i - 1];
-        }
+        byte[] reversed = Arrays.copyOf(input, input.length);
+        reverseBytesInPlace(reversed);
         return reversed;
+    }
+
+    private void reverseBytesInPlace(byte[] input) {
+        int i = 0, j = input.length - 1;
+        while (i < j) {
+            byte temp = input[i];
+            input[i] = input[j];
+            input[j] = temp;
+            i++;
+            j--;
+        }
+    }
+
+    /**
+     * Returns the size in bits of this HdfFixedPoint instance.
+     *
+     * @return The size in bits.
+     */
+    public int getSize() {
+        return size;
     }
 
     @Override
     public String toString() {
         if (isUndefined()) {
-            return "FixedPoint undefined";
+            return "\"Value undefined\"";
         }
-        return "HdfFixedPoint{" +
-                "value=" + getBigIntegerValue() +
-                ", size=" + size +
-                ", signed=" + signed +
-                ", littleEndian=" + littleEndian +
-                ", bytes=" + Arrays.toString(bytes) +
-                '}';
+        return getBigIntegerValue().toString();
     }
 }

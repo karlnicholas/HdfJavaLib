@@ -1,5 +1,6 @@
 package com.github.karlnicholas.hdf5javalib;
 
+import com.github.karlnicholas.hdf5javalib.numeric.HdfFixedPoint;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
@@ -11,10 +12,29 @@ class HdfSuperblockTest {
     @Test
     void testReadAndWrite() {
         // Create a superblock with sample values
-        HdfSuperblock superblock = new HdfSuperblock(1, 1024L, 2048L, 4096L, 8192L);
+        HdfFixedPoint baseAddress = new HdfFixedPoint(ByteBuffer.allocate(8).putLong(1024L).flip(), 64, false);
+        HdfFixedPoint freeSpaceAddress = new HdfFixedPoint(ByteBuffer.allocate(8).putLong(2048L).flip(), 64, false);
+        HdfFixedPoint endOfFileAddress = new HdfFixedPoint(ByteBuffer.allocate(8).putLong(4096L).flip(), 64, false);
+        HdfFixedPoint driverInformationAddress = new HdfFixedPoint(ByteBuffer.allocate(8).putLong(8192L).flip(), 64, false);
+
+        HdfSuperblock superblock = new HdfSuperblock(
+                0,
+                1,
+                1,
+                1,
+                8,
+                8,
+                16,
+                16,
+                baseAddress,
+                freeSpaceAddress,
+                endOfFileAddress,
+                driverInformationAddress
+        );
 
         // Write the superblock to a ByteBuffer
-        ByteBuffer buffer = ByteBuffer.allocate(48);
+        ByteBuffer buffer = ByteBuffer.allocate(56);
+        buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN); // Ensure little-endian ordering
         superblock.writeToBuffer(buffer);
 
         // Flip the buffer to prepare it for reading
@@ -32,17 +52,17 @@ class HdfSuperblockTest {
 
         // Verify that the fields match
         assertEquals(superblock.getVersion(), readSuperblock.getVersion(), "Version mismatch");
-        assertEquals(superblock.getBaseAddress(), readSuperblock.getBaseAddress(), "Base address mismatch");
-        assertEquals(superblock.getFreeSpaceAddress(), readSuperblock.getFreeSpaceAddress(), "Free space address mismatch");
-        assertEquals(superblock.getEndOfFileAddress(), readSuperblock.getEndOfFileAddress(), "End of file address mismatch");
-        assertEquals(superblock.getDriverInformationAddress(), readSuperblock.getDriverInformationAddress(), "Driver information address mismatch");
+        assertEquals(superblock.getBaseAddress().getBigIntegerValue(), readSuperblock.getBaseAddress().getBigIntegerValue(), "Base address mismatch");
+        assertEquals(superblock.getFreeSpaceAddress().getBigIntegerValue(), readSuperblock.getFreeSpaceAddress().getBigIntegerValue(), "Free space address mismatch");
+        assertEquals(superblock.getEndOfFileAddress().getBigIntegerValue(), readSuperblock.getEndOfFileAddress().getBigIntegerValue(), "End of file address mismatch");
+        assertEquals(superblock.getDriverInformationAddress().getBigIntegerValue(), readSuperblock.getDriverInformationAddress().getBigIntegerValue(), "Driver information address mismatch");
     }
 
     @Test
     void testInvalidSignature() {
         // Create an invalid ByteBuffer with the wrong signature
-        ByteBuffer buffer = ByteBuffer.allocate(48);
-        buffer.put(new byte[48]); // Fill with zeroes
+        ByteBuffer buffer = ByteBuffer.allocate(56);
+        buffer.put(new byte[56]); // Fill with zeroes
         buffer.flip();
 
         // Expect an exception due to invalid signature
@@ -54,7 +74,7 @@ class HdfSuperblockTest {
 
     @Test
     void testInvalidSize() {
-        // Create a ByteBuffer smaller than the required 48 bytes
+        // Create a ByteBuffer smaller than the required size
         ByteBuffer smallBuffer = ByteBuffer.allocate(40);
 
         // Expect an exception due to insufficient size
