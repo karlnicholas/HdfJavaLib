@@ -13,6 +13,7 @@ public class HdfReader {
     private final File file;
     private HdfSuperblock superblock;
     private HdfSymbolTableEntry symbolTableEntry;
+    private HdfObjectHeaderV1 objectHeader;
 
     public HdfReader(File file) {
         this.file = file;
@@ -37,6 +38,9 @@ public class HdfReader {
 
             // Parse the HDF Symbol Table Entry
             parseSymbolTableEntry(buffer);
+
+            // Parse the HDF Object Header V1
+            parseObjectHeader(buffer);
         }
     }
 
@@ -63,11 +67,27 @@ public class HdfReader {
         System.out.println("Symbol table entry parsed: " + symbolTableEntry);
     }
 
+    private void parseObjectHeader(ByteBuffer buffer) {
+        System.out.println("Parsing object header...");
+
+        // Get the object header address from the symbol table entry
+        int objectHeaderAddress = symbolTableEntry.getObjectHeaderAddress().getBigIntegerValue().intValue();
+        buffer.position(objectHeaderAddress);
+
+        // Parse the object header
+        this.objectHeader = HdfObjectHeaderV1.fromByteBuffer(buffer);
+        System.out.println("Object header parsed: " + objectHeader);
+    }
+
     public HdfSuperblock getSuperblock() {
         return superblock;
     }
 
     public HdfSymbolTableEntry getSymbolTableEntry() {
         return symbolTableEntry;
+    }
+
+    public HdfObjectHeaderV1 getObjectHeader() {
+        return objectHeader;
     }
 }
