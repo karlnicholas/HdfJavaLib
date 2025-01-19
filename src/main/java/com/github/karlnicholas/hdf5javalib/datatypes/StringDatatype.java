@@ -1,4 +1,4 @@
-package com.github.karlnicholas.hdf5javalib.datatype;
+package com.github.karlnicholas.hdf5javalib.datatypes;
 
 import java.nio.ByteBuffer;
 

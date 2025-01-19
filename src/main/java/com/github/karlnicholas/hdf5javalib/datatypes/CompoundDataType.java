@@ -1,18 +1,18 @@
-package com.github.karlnicholas.hdf5javalib.datatype;
+package com.github.karlnicholas.hdf5javalib.datatypes;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CompoundDatatype extends DatatypeMessage {
+public class CompoundDataType extends DatatypeMessage {
     private final List<MemberDefinition> members;
 
-    public CompoundDatatype(int version, int size) {
+    public CompoundDataType(int version, int size) {
         super(version, 6, size);
         this.members = new ArrayList<>();
     }
 
-    public CompoundDatatype(ByteBuffer buffer) {
+    public CompoundDataType(ByteBuffer buffer) {
         super((buffer.get() & 0xF0) >> 4, 6, buffer.getInt());
         int numberOfMembers = buffer.getShort() & 0xFFFF;
         buffer.getShort(); // Reserved (2 bytes)
