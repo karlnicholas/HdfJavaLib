@@ -18,6 +18,7 @@ public class HdfReader {
     private HdfLocalHeap localHeap;
     private HdfLocalHeapContents localHeapContents;
     private HdfCompoundDatatype compoundDatatype;
+    private HdfDataHeaderV1 dataHeaderV1;
 
     public HdfReader(File file) {
         this.file = file;
@@ -43,9 +44,7 @@ public class HdfReader {
             readUntilAddress(buffer, heapStartAddress);
             parseLocalHeap(buffer);
             parseLocalHeapContents(buffer);
-
-            // Parse Data Object Header (Compound Datatype)
-            parseDataObjectHeader(buffer);
+            parseDataHeaderV1(buffer);
 
             System.out.println("Parsing complete. NEXT: " + buffer.position());
         }
@@ -70,11 +69,18 @@ public class HdfReader {
 
     private void parseObjectHeader(ByteBuffer buffer) {
         System.out.println("Parsing object header...");
-        int objectHeaderAddress = symbolTableEntry.getObjectHeaderAddress().getBigIntegerValue().intValue();
-        readUntilAddress(buffer, objectHeaderAddress);
         int offsetSize = superblock.getSizeOfOffsets();
-        this.objectHeader = HdfObjectHeaderV1.fromByteBuffer(buffer, offsetSize);
-        System.out.println("Object header parsed: " + objectHeader);
+        this.objectHeader = new HdfObjectHeaderV1(buffer, offsetSize);
+
+        System.out.println("Object header parsed:");
+        System.out.println("Version: " + objectHeader.getVersion());
+        System.out.println("Total Header Messages: " + objectHeader.getTotalHeaderMessages());
+        System.out.println("Object Reference Count: " + objectHeader.getObjectReferenceCount());
+        System.out.println("Object Header Size: " + objectHeader.getObjectHeaderSize());
+
+        for (HdfHeaderMessage message : objectHeader.getHeaderMessages()) {
+            System.out.println(message);
+        }
     }
 
     private void parseBTree(ByteBuffer buffer) {
@@ -104,29 +110,21 @@ public class HdfReader {
         System.out.println("Local heap contents read.");
     }
 
-    private void parseDataObjectHeader(ByteBuffer buffer) {
-        System.out.println("Parsing data object header (compound datatype)...");
+    private void parseDataHeaderV1(ByteBuffer buffer) {
+        System.out.println("Parsing HDF Data Header V1...");
 
-        // Parse the compound datatype using the HdfDatatypeParser
-        this.compoundDatatype = HdfDatatypeParser.parseCompoundDatatype(buffer);
+        // Parse the data header
+        this.dataHeaderV1 = new HdfDataHeaderV1(buffer);
 
-        // Output details of the compound datatype
-        System.out.println("Compound Datatype Parsed:");
-        System.out.printf("%-20s %-15s %-10s %-10s%n", "Field Name", "Type", "Size", "Offset");
-        System.out.println("--------------------------------------------------------");
+        // Display parsed details using toString
+        System.out.println("Version: " + dataHeaderV1.getVersion());
+        System.out.println("Total Header Messages: " + dataHeaderV1.getTotalHeaderMessages());
+        System.out.println("Object Reference Count: " + dataHeaderV1.getObjectReferenceCount());
+        System.out.println("Object Header Size: " + dataHeaderV1.getObjectHeaderSize());
 
-        int offset = 0;
-        for (int i = 0; i < compoundDatatype.getComponents().size(); i++) {
-            String fieldName = compoundDatatype.getFieldNames().get(i);
-            var component = compoundDatatype.getComponents().get(i);
-            String typeName = component.getClass().getSimpleName();
-            int size = component.getSize();
-
-            // Print the field details
-            System.out.printf("%-20s %-15s %-10d %-10d%n", fieldName, typeName, size, offset);
-
-            // Update offset for the next field
-            offset += size;
+        // Print each header message using the toString() method
+        for (HdfDataHeaderMessage message : dataHeaderV1.getHeaderMessages()) {
+            System.out.println(message);
         }
     }
 
@@ -163,5 +161,9 @@ public class HdfReader {
 
     public HdfCompoundDatatype getCompoundDatatype() {
         return compoundDatatype;
+    }
+
+    public HdfDataHeaderV1 getDataHeaderV1() {
+        return dataHeaderV1;
     }
 }

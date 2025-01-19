@@ -4,28 +4,24 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class HdfCompoundDatatype {
-    private final List<HdfDatatype> components = new ArrayList<>();
-    private final List<String> fieldNames = new ArrayList<>();
+public class HdfCompoundDatatype extends HdfDatatype {
+    private final List<HdfCompoundField> fields;
 
-    public void addComponent(String fieldName, HdfDatatype datatype) {
-        fieldNames.add(fieldName);
-        components.add(datatype);
+    public HdfCompoundDatatype(int size) {
+        super(size);
+        this.fields = new ArrayList<>();
     }
 
-    public List<Object> readData(ByteBuffer buffer) {
-        List<Object> values = new ArrayList<>();
-        for (HdfDatatype component : components) {
-            values.add(component.readData(buffer));
-        }
-        return values;
+    public void addComponent(String name, HdfDatatype datatype, int offset) {
+        fields.add(new HdfCompoundField(name, datatype, offset));
     }
 
-    public List<String> getFieldNames() {
-        return fieldNames;
+    public List<HdfCompoundField> getFields() {
+        return fields;
     }
 
-    public List<HdfDatatype> getComponents() {
-        return components;
+    @Override
+    public Object readData(ByteBuffer buffer) {
+        throw new UnsupportedOperationException("readData not implemented for HdfCompoundDatatype");
     }
 }
