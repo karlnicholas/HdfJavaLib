@@ -19,7 +19,7 @@ public class HdfObjectHeaderV1 {
         this.headerMessages = headerMessages;
     }
 
-    public static HdfObjectHeaderV1 fromByteBuffer(ByteBuffer buffer) {
+    public static HdfObjectHeaderV1 fromByteBuffer(ByteBuffer buffer, int offsetSize) {
         // Read fixed fields
         int version = Byte.toUnsignedInt(buffer.get());
         int reserved1 = Byte.toUnsignedInt(buffer.get());
@@ -38,7 +38,7 @@ public class HdfObjectHeaderV1 {
         // Parse header messages
         List<HdfHeaderMessage> messages = new ArrayList<>();
         for (int i = 0; i < totalMessages; i++) {
-            messages.add(HdfHeaderMessage.fromByteBuffer(buffer));
+            messages.add(HdfHeaderMessage.fromByteBuffer(buffer, offsetSize));
         }
 
         return new HdfObjectHeaderV1(version, totalMessages, objectReferenceCount, objectHeaderSize, messages);
@@ -53,43 +53,5 @@ public class HdfObjectHeaderV1 {
                 ", objectHeaderSize=" + objectHeaderSize +
                 ", headerMessages=" + headerMessages +
                 '}';
-    }
-
-    public static class HdfHeaderMessage {
-        private final int type;
-        private final int size;
-        private final int flags;
-        private final byte[] data;
-
-        public HdfHeaderMessage(int type, int size, int flags, byte[] data) {
-            this.type = type;
-            this.size = size;
-            this.flags = flags;
-            this.data = data;
-        }
-
-        public static HdfHeaderMessage fromByteBuffer(ByteBuffer buffer) {
-            // Read header message fields
-            int type = Short.toUnsignedInt(buffer.getShort());
-            int size = Short.toUnsignedInt(buffer.getShort());
-            int flags = Byte.toUnsignedInt(buffer.get());
-            buffer.get(new byte[3]); // Skip 3 reserved bytes
-
-            // Read message data
-            byte[] data = new byte[size];
-            buffer.get(data);
-
-            return new HdfHeaderMessage(type, size, flags, data);
-        }
-
-        @Override
-        public String toString() {
-            return "HdfHeaderMessage{" +
-                    "type=" + type +
-                    ", size=" + size +
-                    ", flags=" + flags +
-                    ", data=" + java.util.Arrays.toString(data) +
-                    '}';
-        }
     }
 }
