@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 public class HdfReader {
@@ -45,6 +46,10 @@ public class HdfReader {
             parseLocalHeap(buffer);
             parseLocalHeapContents(buffer);
             parseDataHeaderV1(buffer);
+
+            if (isNextSignature(buffer, "SNOD")) {
+                parseSymbolTableNode(buffer);
+            }
 
             System.out.println("Parsing complete. NEXT: " + buffer.position());
         }
@@ -126,6 +131,28 @@ public class HdfReader {
         for (HdfDataHeaderMessage message : dataHeaderV1.getHeaderMessages()) {
             System.out.println(message);
         }
+    }
+
+    private void parseSymbolTableNode(ByteBuffer buffer) {
+        System.out.println("Parsing Symbol Table Node (SNOD)...");
+
+        // Offset size from the superblock
+        int offsetSize = superblock.getSizeOfOffsets();
+
+        // Parse the SNOD structure
+        HdfSymbolTableNode symbolTableNode = new HdfSymbolTableNode(buffer, offsetSize);
+
+        // Output parsed details
+        System.out.println(symbolTableNode);
+    }
+
+    private boolean isNextSignature(ByteBuffer buffer, String expectedSignature) {
+        buffer.mark();
+        byte[] signatureBytes = new byte[4];
+        buffer.get(signatureBytes);
+        buffer.reset();
+        String actualSignature = new String(signatureBytes, StandardCharsets.US_ASCII);
+        return expectedSignature.equals(actualSignature);
     }
 
     private void readUntilAddress(ByteBuffer buffer, int targetAddress) {
