@@ -1,5 +1,7 @@
 package com.github.karlnicholas.hdf5javalib;
 
+import com.github.karlnicholas.hdf5javalib.messages.ContinuationMessage;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +12,6 @@ public class HdfDataHeaderV1 {
     private final long objectReferenceCount;  // 4 bytes
     private final long objectHeaderSize;      // 4 bytes
     private final List<HdfDataHeaderMessage> headerMessages;
-    private final List<Integer> continuationOffsets; // Continuation block offsets
 
     public HdfDataHeaderV1(ByteBuffer buffer) {
         // Parse Version (1 byte)
@@ -39,7 +40,6 @@ public class HdfDataHeaderV1 {
 
         // Initialize lists
         this.headerMessages = new ArrayList<>();
-        this.continuationOffsets = new ArrayList<>();
 
         // Parse header messages
         parseHeaderMessages(buffer, (int) objectHeaderSize);
@@ -75,36 +75,31 @@ public class HdfDataHeaderV1 {
             buffer.get(messageData);
             bytesRead += messageDataSize;
 
-            // Handle Continuation Blocks
-            if (messageType == 16) { // Object Header Continuation
-                ByteBuffer continuationBuffer = ByteBuffer.wrap(messageData);
-                int continuationOffset = continuationBuffer.getInt();
-                continuationOffsets.add(continuationOffset);
-            } else {
-                // Add the message to the list
-                headerMessages.add(new HdfDataHeaderMessage(messageType, messageDataSize, flags, messageData));
-            }
+            // Add the message to the list
+            headerMessages.add(new HdfDataHeaderMessage(messageType, messageDataSize, flags, messageData));
         }
     }
 
     public void parseContinuationBlocks(ByteBuffer buffer) {
-        for (int offset : continuationOffsets) {
-            // Move to the continuation block offset
-            skipToOffset(buffer, offset);
+        // Iterate through header messages to find ContinuationMessages
+        for (HdfDataHeaderMessage message : headerMessages) {
+            if (message.getType() == 16) { // ContinuationMessage type
+                ContinuationMessage continuationMessage = (ContinuationMessage) message.getParsedMessage();
+                long continuationOffset = continuationMessage.getContinuationOffset();
+                int continuationSize = (int) continuationMessage.getContinuationSize();
 
-            // Read the continuation block size
-            int continuationSize = buffer.getInt();
+                // Move to the continuation block offset
+                skipToOffset(buffer, continuationOffset);
 
-            // Parse the continuation block messages
-            parseHeaderMessages(buffer, continuationSize);
+                // Parse the continuation block messages
+                parseHeaderMessages(buffer, continuationSize);
+            }
         }
     }
 
-    private void skipToOffset(ByteBuffer buffer, int targetOffset) {
-        int remainingBytes = targetOffset;
-        while (remainingBytes > 0) {
+    private void skipToOffset(ByteBuffer buffer, long targetOffset) {
+        while (buffer.position() < targetOffset) {
             buffer.get();
-            remainingBytes--;
         }
     }
 

@@ -29,13 +29,15 @@ public class HdfDataHeaderMessage {
             case 0:
                 return new NullMessage().parseHeaderMessage(buffer);
             case 3:
-                return new DataTypeMessage().parseHeaderMessage(buffer); // Corrected name
+                return new DataTypeMessage().parseHeaderMessage(buffer);
             case 5:
                 return new FillValueMessage().parseHeaderMessage(buffer);
             case 8:
                 return new DataSpaceMessage().parseHeaderMessage(buffer);
             case 18:
-                return new AttributeMessage().parseHeaderMessage(buffer);
+                return new ObjectModificationTimeMessage().parseHeaderMessage(buffer); // Updated to the correct message
+            case 16: // Continuation message
+                return new ContinuationMessage().parseHeaderMessage(buffer);
             default:
                 throw new IllegalArgumentException("Unknown message type: " + type);
         }

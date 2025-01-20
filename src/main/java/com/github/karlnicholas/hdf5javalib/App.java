@@ -10,8 +10,8 @@ import java.io.IOException;
 public class App {
     public static void main(String[] args) {
         try {
-            File hdfFile = new File(App.class.getResource("/ExportedNodeShips.h5").getFile());
-            HdfReader reader = new HdfReader(hdfFile);
+            String filePath = App.class.getResource("/ExportedNodeShips.h5").getFile();
+            HdfReader reader = new HdfReader(filePath);
             reader.readFile();
         } catch (IOException e) {
             e.printStackTrace();

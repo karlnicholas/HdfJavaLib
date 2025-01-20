@@ -17,8 +17,8 @@ public class HdfReader {
     private HdfLocalHeapContents localHeapContents;
     private HdfDataHeaderV1 dataHeaderV1;
 
-    public HdfReader(File file) {
-        this.file = file;
+    public HdfReader(String filePath) {
+        this.file = new File(filePath);
     }
 
     public void readFile() throws IOException {
