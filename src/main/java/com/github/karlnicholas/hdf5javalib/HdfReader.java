@@ -11,7 +11,6 @@ import java.nio.file.Files;
 public class HdfReader {
     private final File file;
     private HdfSuperblock superblock;
-    private HdfSymbolTableEntry symbolTableEntry;
     private HdfObjectHeaderV1 objectHeader;
     private HdfLocalHeap localHeap;
     private HdfLocalHeapContents localHeapContents;
@@ -34,10 +33,9 @@ public class HdfReader {
             buffer.flip();
 
             parseSuperblock(buffer);
-            parseSymbolTableEntry(buffer);
             parseObjectHeader(buffer);
             parseBTree(buffer);
-            int heapStartAddress = symbolTableEntry.getLocalHeapAddress().getBigIntegerValue().intValue();
+            int heapStartAddress = superblock.getRootGroupSymbolTableEntry().getLocalHeapAddress().getBigIntegerValue().intValue();
             readUntilAddress(buffer, heapStartAddress);
             parseLocalHeap(buffer);
             parseLocalHeapContents(buffer);
@@ -57,17 +55,6 @@ public class HdfReader {
         System.out.println("Superblock parsed: " + superblock);
     }
 
-    private void parseSymbolTableEntry(ByteBuffer buffer) {
-        System.out.println("Parsing symbol table entry...");
-        int offsetSize = superblock.getSizeOfOffsets();
-        int baseAddress = superblock.getBaseAddress().getBigIntegerValue().intValue();
-        if (baseAddress != 0) {
-            readUntilAddress(buffer, baseAddress);
-        }
-        this.symbolTableEntry = HdfSymbolTableEntry.fromByteBuffer(buffer, offsetSize);
-        System.out.println("Symbol table entry parsed: " + symbolTableEntry);
-    }
-
     private void parseObjectHeader(ByteBuffer buffer) {
         System.out.println("Parsing object header...");
         int offsetSize = superblock.getSizeOfOffsets();
@@ -85,9 +72,9 @@ public class HdfReader {
     }
 
     private void parseBTree(ByteBuffer buffer) {
-        if (symbolTableEntry.getCacheType() == 1 && symbolTableEntry.getBTreeAddress() != null) {
-            System.out.println("Parsing B-tree at address: " + symbolTableEntry.getBTreeAddress());
-            int bTreeAddress = symbolTableEntry.getBTreeAddress().getBigIntegerValue().intValue();
+        if (superblock.getRootGroupSymbolTableEntry().getCacheType() == 1 && superblock.getRootGroupSymbolTableEntry().getBTreeAddress() != null) {
+            System.out.println("Parsing B-tree at address: " + superblock.getRootGroupSymbolTableEntry().getBTreeAddress());
+            int bTreeAddress = superblock.getRootGroupSymbolTableEntry().getBTreeAddress().getBigIntegerValue().intValue();
             readUntilAddress(buffer, bTreeAddress);
             HdfBTreeV1 bTreeNode = HdfBTreeV1.fromByteBuffer(buffer, superblock);
             System.out.println("B-tree parsed: " + bTreeNode);
@@ -164,10 +151,6 @@ public class HdfReader {
 
     public HdfSuperblock getSuperblock() {
         return superblock;
-    }
-
-    public HdfSymbolTableEntry getSymbolTableEntry() {
-        return symbolTableEntry;
     }
 
     public HdfObjectHeaderV1 getObjectHeader() {

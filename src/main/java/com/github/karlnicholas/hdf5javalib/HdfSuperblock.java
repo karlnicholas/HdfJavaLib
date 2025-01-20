@@ -21,6 +21,7 @@ public class HdfSuperblock {
     private final HdfFixedPoint freeSpaceAddress;
     private final HdfFixedPoint endOfFileAddress;
     private final HdfFixedPoint driverInformationAddress;
+    private final HdfSymbolTableEntry rootGroupSymbolTableEntry; // Added field
 
     public HdfSuperblock(
             int version,
@@ -34,7 +35,8 @@ public class HdfSuperblock {
             HdfFixedPoint baseAddress,
             HdfFixedPoint freeSpaceAddress,
             HdfFixedPoint endOfFileAddress,
-            HdfFixedPoint driverInformationAddress
+            HdfFixedPoint driverInformationAddress,
+            HdfSymbolTableEntry rootGroupSymbolTableEntry // Constructor parameter
     ) {
         this.version = version;
         this.freeSpaceVersion = freeSpaceVersion;
@@ -48,6 +50,7 @@ public class HdfSuperblock {
         this.freeSpaceAddress = freeSpaceAddress;
         this.endOfFileAddress = endOfFileAddress;
         this.driverInformationAddress = driverInformationAddress;
+        this.rootGroupSymbolTableEntry = rootGroupSymbolTableEntry;
     }
 
     public static HdfSuperblock readFromBuffer(ByteBuffer buffer) {
@@ -80,6 +83,9 @@ public class HdfSuperblock {
         HdfFixedPoint endOfFileAddress = new HdfFixedPoint(buffer, sizeOfOffsets * 8, false);
         HdfFixedPoint driverInformationAddress = new HdfFixedPoint(buffer, sizeOfOffsets * 8, false);
 
+        // Parse root group symbol table entry
+        HdfSymbolTableEntry rootGroupSymbolTableEntry = HdfSymbolTableEntry.fromByteBuffer(buffer, sizeOfOffsets);
+
         return new HdfSuperblock(
                 version,
                 freeSpaceVersion,
@@ -92,7 +98,8 @@ public class HdfSuperblock {
                 baseAddress,
                 freeSpaceAddress,
                 endOfFileAddress,
-                driverInformationAddress
+                driverInformationAddress,
+                rootGroupSymbolTableEntry
         );
     }
 
@@ -114,34 +121,11 @@ public class HdfSuperblock {
         buffer.put(freeSpaceAddress != null ? freeSpaceAddress.getHdfBytes(true) : HdfFixedPoint.undefined(sizeOfOffsets).getHdfBytes(true));
         buffer.put(endOfFileAddress.getHdfBytes(true));
         buffer.put(driverInformationAddress != null ? driverInformationAddress.getHdfBytes(true) : HdfFixedPoint.undefined(sizeOfOffsets).getHdfBytes(true));
+        rootGroupSymbolTableEntry.writeToBuffer(buffer, sizeOfOffsets); // Write symbol table entry
     }
 
-    public int getVersion() {
-        return version;
-    }
-
-    public int getSizeOfOffsets() {
-        return sizeOfOffsets;
-    }
-
-    public int getSizeOfLengths() {
-        return sizeOfLengths;
-    }
-
-    public HdfFixedPoint getBaseAddress() {
-        return baseAddress;
-    }
-
-    public HdfFixedPoint getFreeSpaceAddress() {
-        return freeSpaceAddress;
-    }
-
-    public HdfFixedPoint getEndOfFileAddress() {
-        return endOfFileAddress;
-    }
-
-    public HdfFixedPoint getDriverInformationAddress() {
-        return driverInformationAddress;
+    public HdfSymbolTableEntry getRootGroupSymbolTableEntry() {
+        return rootGroupSymbolTableEntry;
     }
 
     @Override
@@ -159,7 +143,19 @@ public class HdfSuperblock {
                 ", freeSpaceAddress=" + freeSpaceAddress +
                 ", endOfFileAddress=" + endOfFileAddress +
                 ", driverInformationAddress=" + driverInformationAddress +
+                ", rootGroupSymbolTableEntry=" + rootGroupSymbolTableEntry +
                 '}';
     }
 
+    public int getSizeOfOffsets() {
+        return sizeOfOffsets;
+    }
+
+    public HdfFixedPoint getBaseAddress() {
+        return baseAddress;
+    }
+
+    public int getSizeOfLengths() {
+        return sizeOfLengths;
+    }
 }
