@@ -1,7 +1,6 @@
 package com.github.karlnicholas.hdf5javalib;
 
 import com.github.karlnicholas.hdf5javalib.datatypes.HdfCompoundDatatype;
-import com.github.karlnicholas.hdf5javalib.datatypes.HdfDatatypeParser;
 
 import java.io.File;
 import java.io.FileInputStream;
