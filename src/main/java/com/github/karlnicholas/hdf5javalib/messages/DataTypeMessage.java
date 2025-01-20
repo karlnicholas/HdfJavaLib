@@ -31,7 +31,7 @@ public class DataTypeMessage implements HdfMessage {
 
         // Check if the datatype is Compound
         if (dataTypeClass == 6) { // Compound datatype
-            this.compoundDataTypeClass = new CompoundDataTypeClass();
+            this.compoundDataTypeClass = new CompoundDataTypeClass(classBitField);
             this.compoundDataTypeClass.parseHeaderMessage(buffer);
         } else {
             // For other datatype classes, parsing logic will be added later
