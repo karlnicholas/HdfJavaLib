@@ -1,7 +1,5 @@
 package com.github.karlnicholas.hdf5javalib;
 
-import com.github.karlnicholas.hdf5javalib.datatypes.HdfCompoundDatatype;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -17,7 +15,6 @@ public class HdfReader {
     private HdfObjectHeaderV1 objectHeader;
     private HdfLocalHeap localHeap;
     private HdfLocalHeapContents localHeapContents;
-    private HdfCompoundDatatype compoundDatatype;
     private HdfDataHeaderV1 dataHeaderV1;
 
     public HdfReader(File file) {
@@ -183,10 +180,6 @@ public class HdfReader {
 
     public HdfLocalHeapContents getLocalHeapContents() {
         return localHeapContents;
-    }
-
-    public HdfCompoundDatatype getCompoundDatatype() {
-        return compoundDatatype;
     }
 
     public HdfDataHeaderV1 getDataHeaderV1() {
