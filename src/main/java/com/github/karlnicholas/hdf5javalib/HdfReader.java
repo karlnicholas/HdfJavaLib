@@ -60,15 +60,8 @@ public class HdfReader {
         int offsetSize = superblock.getSizeOfOffsets();
         this.objectHeader = new HdfObjectHeaderV1(buffer, offsetSize);
 
-        System.out.println("Object header parsed:");
-        System.out.println("Version: " + objectHeader.getVersion());
-        System.out.println("Total Header Messages: " + objectHeader.getTotalHeaderMessages());
-        System.out.println("Object Reference Count: " + objectHeader.getObjectReferenceCount());
-        System.out.println("Object Header Size: " + objectHeader.getObjectHeaderSize());
-
-        for (HdfHeaderMessage message : objectHeader.getHeaderMessages()) {
-            System.out.println(message);
-        }
+        // Use toString for concise output
+        System.out.println("Object header parsed: " + objectHeader);
     }
 
     private void parseBTree(ByteBuffer buffer) {
